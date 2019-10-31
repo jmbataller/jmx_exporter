@@ -38,7 +38,7 @@ public class JavaAgent {
      */
     public static Config parseConfig(String args) {
         Pattern pattern = Pattern.compile(
-                        "(\\d{1,5}):" +              // scrape interval in secs
+                        "(\\d{1,10}):" +              // scrape interval in secs
                         "(.+)");                     // config file
 
         Matcher matcher = pattern.matcher(args);
