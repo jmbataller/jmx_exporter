@@ -4,49 +4,55 @@ import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.TimerTask;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 public class LogExporter extends TimerTask {
 
-    private static Logger logger;
+    private static final Logger logger;
 
     static {
-        InputStream inputStream = LogExporter.class.getResourceAsStream("/logging.properties");
-        if (null != inputStream) {
-            try {
-                LogManager.getLogManager().readConfiguration(inputStream);
-            } catch (IOException e) {
-                Logger.getGlobal().log(Level.SEVERE, "init logging system", e);
-            }
-            logger = Logger.getLogger(LogExporter.class.getCanonicalName());
+        try {
+            LogManager.getLogManager().readConfiguration(LogExporter.class.getResourceAsStream("/logging.properties"));
+        } catch (IOException e) {
+            Logger.getGlobal().log(Level.SEVERE, "init logging system", e);
         }
+        logger = Logger.getLogger(LogExporter.class.getCanonicalName());
     }
 
     @Override
     public void run() {
-        logMetrics();
+        logErrorAndContinueIfException(() -> logMetrics());
     }
 
-    private void logMetrics() {
+    private Void logMetrics() {
         Enumeration<Collector.MetricFamilySamples> metricFamilySamplesEnumeration = CollectorRegistry.defaultRegistry.metricFamilySamples();
-        while(metricFamilySamplesEnumeration.hasMoreElements()) {
+        while (metricFamilySamplesEnumeration.hasMoreElements()) {
             Collector.MetricFamilySamples metric = metricFamilySamplesEnumeration.nextElement();
+            metric.samples.forEach(sample -> {
+                String logEntry = logErrorAndContinueIfException(() -> isValid(metric, sample) ? LogEntryMetric.of(metric, sample).toString() : null);
+                logger.info(logEntry);
+            });
+        }
+        return null;
+    }
 
-            /**
-             * metric.name,
-             *                 metric.type.name().toLowerCase(),
-             *                 formatTimestamp(metric.samples.get(0).timestampMs),
-             *                 formatValue(metric.samples.get(0).value)
-             */
-            if(metric != null && metric.name != null && metric.type != null && metric.samples.size() > 0 && metric.samples.get(0) != null) {
-                logger.info(LogEntryMetric.of(metric).toString());
-                System.out.println(LogEntryMetric.of(metric).toString());
-            }
+    private boolean isValid(final Collector.MetricFamilySamples metric, final Collector.MetricFamilySamples.Sample sample) {
+        return metric != null && metric.name != null && metric.type != null && sample != null
+                ? true : false;
+    }
+
+    private <T> T logErrorAndContinueIfException(Supplier<T> supplier) {
+        try {
+            return supplier.get();
+        } catch (Throwable ex) {
+            ex.printStackTrace();
+            logger.severe("Error logging metrics. " + ex.getMessage());
+            return null;
         }
     }
 }

@@ -1,11 +1,10 @@
 package io.prometheus.jmx;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.junit.Test;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -15,7 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class JavaAgentIT {
     private List<URL> getClassloaderUrls() {
@@ -67,31 +66,10 @@ public class JavaAgentIT {
         }
 
         final Process app = new ProcessBuilder()
-            .command(java, javaagent, "-cp", buildClasspath(), "io.prometheus.jmx.TestApplication")
-            .start();
+                .command(java, javaagent, "-cp", buildClasspath(), "io.prometheus.jmx.TestApplication")
+                .start();
         try {
-            // Wait for application to start
-            app.getInputStream().read();
-
-            TimeUnit.SECONDS.sleep(2);
-
-            assertThat("Expected metric found", true);
-
-            // TODO: try to get hold of the std out and validate output
-            /*InputStream stream = new URL("http://localhost:" + port + "/metrics").openStream();
-            BufferedReader contents = new BufferedReader(new InputStreamReader(stream));
-            boolean found = false;
-            while (!found) {
-                String line = contents.readLine();
-                if (line == null) {
-                    break;
-                }
-                if (line.contains("jmx_scrape_duration_seconds")) {
-                    found = true;
-                }
-            }
-
-            assertThat("Expected metric not found", found);*/
+            TimeUnit.SECONDS.sleep(scrapeIntervalInSecs + 1);
 
             // Tell application to stop
             app.getOutputStream().write('\n');
@@ -100,6 +78,7 @@ public class JavaAgentIT {
             } catch (IOException ignored) {
             }
         } finally {
+            app.destroy();
             final int exitcode = app.waitFor();
             // Log any errors printed
             int len;
@@ -107,6 +86,15 @@ public class JavaAgentIT {
             while ((len = app.getErrorStream().read(buffer)) != -1) {
                 System.out.write(buffer, 0, len);
             }
+
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(app.getInputStream()));
+            StringBuilder builder = new StringBuilder();
+            String line = null;
+            while ((line = reader.readLine()) != null) {
+                builder.append(line);
+                builder.append(System.getProperty("line.separator"));
+            }
+            String result = builder.toString();
 
             assertThat("Application did not exit cleanly", exitcode == 0);
         }

@@ -22,7 +22,7 @@ public class JavaAgent {
             new BuildInfoCollector().register();
             new JmxCollector(new File(config.file)).register();
             DefaultExports.initialize();
-            LogEntryScheduler.schedule(config.scrapeIntervalInSecs);
+            LogEntryScheduler.schedule(config.scrapeIntervalInMillis);
         }
         catch (IllegalArgumentException e) {
             System.err.println("Usage: -javaagent:/path/to/JavaAgent.jar=<scrape interval in secs>:<yaml configuration file> " + e.getMessage());
@@ -49,17 +49,17 @@ public class JavaAgent {
         String givenScrapeIntervalInSecs = matcher.group(1);
         String givenConfigFile = matcher.group(2);
 
-        int scrapeIntervalInSecs = Integer.parseInt(givenScrapeIntervalInSecs);
+        int scrapeIntervalInMillis = Integer.parseInt(givenScrapeIntervalInSecs) * 1000;
 
-        return new Config(scrapeIntervalInSecs, givenConfigFile);
+        return new Config(scrapeIntervalInMillis, givenConfigFile);
     }
 
     static class Config {
-        int scrapeIntervalInSecs;
+        int scrapeIntervalInMillis;
         String file;
 
-        Config(final int scrapeIntervalInSecs, final String file) {
-            this.scrapeIntervalInSecs = scrapeIntervalInSecs;
+        Config(final int scrapeIntervalInMillis, final String file) {
+            this.scrapeIntervalInMillis = scrapeIntervalInMillis;
             this.file = file;
         }
     }

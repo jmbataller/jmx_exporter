@@ -16,26 +16,26 @@ public class JavaAgentTest {
     public void testAgentStringParsing() {
 
         JavaAgent.Config config = JavaAgent.parseConfig("60:config.yaml");
-        Assert.assertEquals(60, config.scrapeIntervalInSecs);
+        Assert.assertEquals(60000, config.scrapeIntervalInMillis);
         Assert.assertEquals("config.yaml", config.file);
 
         config = JavaAgent.parseConfig("10:\\Windows\\Local\\Drive\\Path\\config.yaml");
-        Assert.assertEquals(10, config.scrapeIntervalInSecs);
+        Assert.assertEquals(10000, config.scrapeIntervalInMillis);
         Assert.assertEquals("\\Windows\\Local\\Drive\\Path\\config.yaml", config.file);
 
         // the following check was previously failing to parse the file correctly
         config = JavaAgent.parseConfig("10:C:\\Windows\\Path\\config.yaml");
-        Assert.assertEquals(10, config.scrapeIntervalInSecs);
+        Assert.assertEquals(10000, config.scrapeIntervalInMillis);
         Assert.assertEquals("C:\\Windows\\Path\\config.yaml", config.file);
 
         // the following check was previously failing to parse the file correctly
         config = JavaAgent.parseConfig("10:C:\\Windows\\Path\\config.yaml");
-        Assert.assertEquals(10, config.scrapeIntervalInSecs);
+        Assert.assertEquals(10000, config.scrapeIntervalInMillis);
         Assert.assertEquals("C:\\Windows\\Path\\config.yaml", config.file);
 
         // the following check was previously failing to parse the file correctly
         config = JavaAgent.parseConfig("10:C:\\Windows\\Path\\config.yaml");
-        Assert.assertEquals(10, config.scrapeIntervalInSecs);
+        Assert.assertEquals(10000, config.scrapeIntervalInMillis);
         Assert.assertEquals("C:\\Windows\\Path\\config.yaml", config.file);
     }
 
