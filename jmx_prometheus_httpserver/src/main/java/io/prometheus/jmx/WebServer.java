@@ -2,17 +2,24 @@ package io.prometheus.jmx;
 
 import java.io.File;
 import java.net.InetSocketAddress;
+import java.util.Enumeration;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
+import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.HTTPServer;
 
 public class WebServer {
 
    public static void main(String[] args) throws Exception {
+
      if (args.length < 2) {
        System.err.println("Usage: WebServer <[hostname:]port> <yaml configuration file>");
        System.exit(1);
      }
+
+     System.setProperty("java.util.logging.config.file", "logging.properties");
 
      String[] hostnamePort = args[0].split(":");
      int port;
@@ -28,6 +35,9 @@ public class WebServer {
 
      new BuildInfoCollector().register();
      new JmxCollector(new File(args[1])).register();
+
+     LogEntryScheduler.schedule(10000L);
+
      new HTTPServer(socket, CollectorRegistry.defaultRegistry);
    }
 }

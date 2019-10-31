@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.hotspot.DefaultExports;
+import io.prometheus.jmx.logexporter.LogEntryScheduler;
 
 public class JavaAgent {
 
@@ -28,6 +29,7 @@ public class JavaAgent {
             new BuildInfoCollector().register();
             new JmxCollector(new File(config.file)).register();
             DefaultExports.initialize();
+            LogEntryScheduler.schedule(10000L);
             server = new HTTPServer(config.socket, CollectorRegistry.defaultRegistry, true);
         }
         catch (IllegalArgumentException e) {
