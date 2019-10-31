@@ -1,28 +1,41 @@
 JMX Exporter
 =====
 
-JMX to Prometheus exporter: a collector that can configurably scrape and
+JMX to Prometheus exporter: a collector that can scrape and
 expose mBeans of a JMX target.
 
-This exporter is intended to be run as a Java Agent, exposing a HTTP server
-and serving metrics of the local JVM. It can be also run as an independent
-HTTP server and scrape remote JMX targets, but this has various
-disadvantages, such as being harder to configure and being unable to expose
-process metrics (e.g., memory and CPU usage). Running the exporter as a Java
-Agent is thus strongly encouraged.
+This exporter is intended to be run as a Java Agent, logging metrics of the local JVM
+in standard out.
+
+The exporter is based on [the original JMX exporter](https://github.com/prometheus/jmx_exporter) that exposes
+metrics through a HTTP endpoint
 
 ## Running
 
 To run as a javaagent [download the jar](https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.12.0/jmx_prometheus_javaagent-0.12.0.jar) and run:
 
 ```
-java -javaagent:./jmx_prometheus_javaagent-0.12.0.jar=8080:config.yaml -jar yourJar.jar
+java -javaagent:./jmx_prometheus_javaagent-0.12.0.jar=15:config.yaml -jar yourJar.jar
 ```
-Metrics will now be accessible at http://localhost:8080/metrics
+Metrics will be logged in stdout with the following format:
 
-To bind the java agent to a specific IP change the port number to `host:port`.
+```
+{
+    "metric": {
+        "labels": {
+            "service": "my-service",
+            "product": "my-product"
+        },
+        "name": "jvm_info",
+        "timestamp": "2019-10-31T14:07.866Z",
+        "type": "gauge",
+        "value": 1.0
+    }
+}
+```
 
-See `./run_sample_httpserver.sh` for a sample script that runs the httpserver against itself.
+To set the scrape interval: <scrape interval in secs>:<orometheus config file>
+
 
 ## Building
 
@@ -109,32 +122,6 @@ If a given part isn't set, it'll be excluded.
 ## Testing
 
 `mvn test` to test.
-
-## Debugging
-
-You can start the jmx's scraper in standalone mode in order to debug what is called 
-
-```
-git clone https://github.com/prometheus/jmx_exporter.git
-cd jmx_exporter
-mvn package
-java -cp collector/target/collector*.jar  io.prometheus.jmx.JmxScraper  service:jmx:rmi:your_url
-```
-
-To get finer logs (including the duration of each jmx call),
-create a file called logging.properties with this content:
-
-```
-handlers=java.util.logging.ConsoleHandler
-java.util.logging.ConsoleHandler.level=ALL
-io.prometheus.jmx.level=ALL
-io.prometheus.jmx.shaded.io.prometheus.jmx.level=ALL
-```
-
-Add the following flag to your Java invocation:
-
-`-Djava.util.logging.config.file=/path/to/logging.properties`
-
 
 ## Installing
 
