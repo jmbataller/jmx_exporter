@@ -17,8 +17,7 @@
   </parent>
 
   <modules>
-    <module>collector</module>
-    <module>jmx_prometheus_httpserver</module>
+    <module>jmx_prometheus_logexporter</module>
     <module>jmx_prometheus_javaagent</module>
   </modules>
 
