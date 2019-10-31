@@ -18,7 +18,7 @@
     <dependency>
       <groupId>io.prometheus.jmx</groupId>
       <artifactId>collector</artifactId>
-      <version>0.12.1-SNAPSHOT</version>
+      <version>0.12.0</version>
     </dependency>
     <dependency>
       <groupId>io.prometheus</groupId>
@@ -26,9 +26,9 @@
       <version>0.6.0</version>
     </dependency>
     <dependency>
-      <groupId>io.prometheus</groupId>
-      <artifactId>simpleclient_httpserver</artifactId>
-      <version>0.6.0</version>
+      <groupId>io.prometheus.jmx</groupId>
+      <artifactId>jmx_prometheus_logexporter</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -104,7 +104,7 @@
           </systemPropertyVariables>
         </configuration>
       </plugin>
-      <plugin>
+      <!--<plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
         <version>1.9.1</version>
@@ -115,14 +115,9 @@
               <goal>reserve-network-port</goal>
             </goals>
             <phase>process-resources</phase>
-            <configuration>
-              <portNames>
-                <portName>it.port</portName>
-              </portNames>
-            </configuration>
           </execution>
         </executions>
-      </plugin>
+      </plugin>-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
@@ -137,7 +132,6 @@
               <systemPropertyVariables>
                 <buildDirectory>${project.build.directory}</buildDirectory>
                 <finalName>${project.build.finalName}</finalName>
-                <it.port>${it.port}</it.port>
               </systemPropertyVariables>
             </configuration>
           </execution>

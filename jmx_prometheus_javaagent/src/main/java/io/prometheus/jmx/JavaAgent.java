@@ -2,38 +2,30 @@ package io.prometheus.jmx;
 
 import java.io.File;
 import java.lang.instrument.Instrumentation;
-import java.net.InetSocketAddress;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.prometheus.client.CollectorRegistry;
-import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.hotspot.DefaultExports;
 import io.prometheus.jmx.logexporter.LogEntryScheduler;
 
 public class JavaAgent {
-
-    static HTTPServer server;
 
     public static void agentmain(String agentArgument, Instrumentation instrumentation) throws Exception {
         premain(agentArgument, instrumentation);
     }
 
     public static void premain(String agentArgument, Instrumentation instrumentation) throws Exception {
-        // Bind to all interfaces by default (this includes IPv6).
-        String host = "0.0.0.0";
 
         try {
-            Config config = parseConfig(agentArgument, host);
+            Config config = parseConfig(agentArgument);
 
             new BuildInfoCollector().register();
             new JmxCollector(new File(config.file)).register();
             DefaultExports.initialize();
-            LogEntryScheduler.schedule(10000L);
-            server = new HTTPServer(config.socket, CollectorRegistry.defaultRegistry, true);
+            LogEntryScheduler.schedule(config.scrapeIntervalInSecs);
         }
         catch (IllegalArgumentException e) {
-            System.err.println("Usage: -javaagent:/path/to/JavaAgent.jar=[host:]<port>:<yaml configuration file> " + e.getMessage());
+            System.err.println("Usage: -javaagent:/path/to/JavaAgent.jar=<scrape interval in secs>:<yaml configuration file> " + e.getMessage());
             System.exit(1);
         }
     }
@@ -42,13 +34,11 @@ public class JavaAgent {
      * Parse the Java Agent configuration. The arguments are typically specified to the JVM as a javaagent as
      * {@code -javaagent:/path/to/agent.jar=<CONFIG>}. This method parses the {@code <CONFIG>} portion.
      * @param args provided agent args
-     * @param ifc default bind interface
      * @return configuration to use for our application
      */
-    public static Config parseConfig(String args, String ifc) {
+    public static Config parseConfig(String args) {
         Pattern pattern = Pattern.compile(
-                "^(?:((?:[\\w.]+)|(?:\\[.+])):)?" +  // host name, or ipv4, or ipv6 address in brackets
-                        "(\\d{1,5}):" +              // port
+                        "(\\d{1,5}):" +              // scrape interval in secs
                         "(.+)");                     // config file
 
         Matcher matcher = pattern.matcher(args);
@@ -56,35 +46,21 @@ public class JavaAgent {
             throw new IllegalArgumentException("Malformed arguments - " + args);
         }
 
-        String givenHost = matcher.group(1);
-        String givenPort = matcher.group(2);
-        String givenConfigFile = matcher.group(3);
+        String givenScrapeIntervalInSecs = matcher.group(1);
+        String givenConfigFile = matcher.group(2);
 
-        int port = Integer.parseInt(givenPort);
+        int scrapeIntervalInSecs = Integer.parseInt(givenScrapeIntervalInSecs);
 
-        InetSocketAddress socket;
-        if (givenHost != null && !givenHost.isEmpty()) {
-            socket = new InetSocketAddress(givenHost, port);
-        }
-        else {
-            socket = new InetSocketAddress(ifc, port);
-            givenHost = ifc;
-        }
-
-        return new Config(givenHost, port, givenConfigFile, socket);
+        return new Config(scrapeIntervalInSecs, givenConfigFile);
     }
 
     static class Config {
-        String host;
-        int port;
+        int scrapeIntervalInSecs;
         String file;
-        InetSocketAddress socket;
 
-        Config(String host, int port, String file, InetSocketAddress socket) {
-            this.host = host;
-            this.port = port;
+        Config(final int scrapeIntervalInSecs, final String file) {
+            this.scrapeIntervalInSecs = scrapeIntervalInSecs;
             this.file = file;
-            this.socket = socket;
         }
     }
 }
